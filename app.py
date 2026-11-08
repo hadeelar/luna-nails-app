@@ -1,64 +1,13 @@
-Claude
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-App · PY
 from __future__ import annotations
- 
+
 from typing import Any
- 
+
 import streamlit as st
- 
- 
+
+
 # Variable (constant): the VAT rate added to every invoice (15%)
 VAT_RATE = 0.15
- 
+
 # Variable: all salon services with their prices.
 # "per_nail": True means the price is multiplied by the number of nails.
 SERVICES = {
@@ -72,11 +21,11 @@ SERVICES = {
     "Acrylic Extensions": {"price": 250.0, "per_nail": False},
     "Nail Repair": {"price": 20.0, "per_nail": True},
 }
- 
+
 # Variable: the working days (Monday is not in the list because the salon is closed)
 DAYS = ["Saturday", "Sunday", "Tuesday", "Wednesday", "Thursday", "Friday"]
- 
- 
+
+
 # Improvement: custom style (colors, fonts and cards) to make the app look like a nail salon
 CUSTOM_STYLE = """
 <style>
@@ -133,12 +82,12 @@ CUSTOM_STYLE = """
 }
 </style>
 """
- 
- 
+
+
 def format_sar(amount: float) -> str:
     return f"SAR {amount:,.2f}"
- 
- 
+
+
 # Function: shows the welcome section at the top of the page
 def display_introduction() -> None:
     st.markdown(CUSTOM_STYLE, unsafe_allow_html=True)
@@ -158,20 +107,20 @@ def display_introduction() -> None:
         """,
         unsafe_allow_html=True,
     )
- 
- 
+
+
 def get_customer_info() -> tuple[str, str]:
     with st.container(border=True):
         st.subheader("1. Your details")
         name = st.text_input("Customer name", placeholder="Enter your name")
         phone = st.text_input("Phone number", placeholder="Enter your phone number")
     return name, phone
- 
- 
+
+
 def get_service_selections() -> tuple[list[dict[str, Any]], float]:
     with st.container(border=True):
         st.subheader("2. Choose your services")
- 
+
         service = st.selectbox(
             "Service",
             options=list(SERVICES),
@@ -182,7 +131,7 @@ def get_service_selections() -> tuple[list[dict[str, Any]], float]:
             ),
             key="service_choice",
         )
- 
+
         nail_count: int | None = None
         # If statement: only ask for the number of nails when the service is priced per nail
         if SERVICES[service]["per_nail"]:
@@ -196,7 +145,7 @@ def get_service_selections() -> tuple[list[dict[str, Any]], float]:
                     nail_count = int(raw_nail_count)
                 except ValueError:
                     nail_count = None
- 
+
         add_error = None
         if st.button("Add Service", type="primary", use_container_width=True):
             if SERVICES[service]["per_nail"]:
@@ -205,11 +154,11 @@ def get_service_selections() -> tuple[list[dict[str, Any]], float]:
                     nail_count = int(raw_nail_count)
                 except (TypeError, ValueError):
                     nail_count = None
- 
+
                 # If statement (validation): the number of nails must be from 1 to 10
                 if nail_count is None or not 1 <= nail_count <= 10:
                     add_error = "Please enter a number of nails from 1 to 10"
- 
+
             if add_error is None:
                 price = SERVICES[service]["price"]
                 if SERVICES[service]["per_nail"]:
@@ -223,10 +172,10 @@ def get_service_selections() -> tuple[list[dict[str, Any]], float]:
                 )
                 st.session_state.pop("invoice", None)
                 st.success(f"{service} added.")
- 
+
         if add_error:
             st.error(add_error)
- 
+
         selected_services = st.session_state.setdefault("selected_services", [])
         st.markdown("**🛍️ Added services**")
         if selected_services:
@@ -238,17 +187,17 @@ def get_service_selections() -> tuple[list[dict[str, Any]], float]:
                 st.write(f"• {label} — {format_sar(item['price'])}")
         else:
             st.caption("No services added yet.")
- 
+
         service_total = sum(item["price"] for item in selected_services)
         if selected_services:
             st.write(f"**Service total: {format_sar(service_total)}**")
     return selected_services, service_total
- 
- 
+
+
 def reset_time_choice() -> None:
     st.session_state["time_choice"] = None
- 
- 
+
+
 # Function: returns the available times for the chosen day
 def times_for_day(day: str | None) -> list[str]:
     if day is None:
@@ -262,8 +211,8 @@ def times_for_day(day: str | None) -> list[str]:
         suffix = "PM" if hour >= 12 else "AM"
         times.append(f"{hour_12}:00 {suffix}")
     return times
- 
- 
+
+
 def get_appointment_selection() -> tuple[str | None, str | None]:
     with st.container(border=True):
         st.subheader("3. Choose an appointment")
@@ -285,8 +234,8 @@ def get_appointment_selection() -> tuple[str | None, str | None]:
             disabled=day is None,
         )
     return day, time
- 
- 
+
+
 # Function: calculates the tax and the final total
 def process_booking(
     service_total: float, day_choice: str | None, time_choice: str | None
@@ -298,8 +247,8 @@ def process_booking(
         "tax": tax,
         "total": service_total + tax,
     }
- 
- 
+
+
 # Function: shows the final invoice
 def display_invoice(
     name: str,
@@ -317,7 +266,7 @@ def display_invoice(
         with appointment_col:
             st.write(f"**📅 Day:** {booking['day']}")
             st.write(f"**🕒 Time:** {booking['time']}")
- 
+
         st.divider()
         st.markdown("**Services**")
         for item in services:
@@ -325,7 +274,7 @@ def display_invoice(
             if item["nails"] is not None:
                 label += f" ({item['nails']} nails)"
             st.write(f"• {label} — {format_sar(item['price'])}")
- 
+
         st.divider()
         st.write(f"**Service total:** {format_sar(service_total)}")
         st.write(f"**VAT (15%):** {format_sar(booking['tax'])}")
@@ -337,16 +286,16 @@ def display_invoice(
             '<p class="luna-thanks">Thank you for choosing Luna Nails! 💖</p>',
             unsafe_allow_html=True,
         )
- 
- 
+
+
 def main() -> None:
     st.set_page_config(page_title="Luna Nails Booking", page_icon="💅")
     display_introduction()
- 
+
     name, phone = get_customer_info()
     services, service_total = get_service_selections()
     day_choice, time_choice = get_appointment_selection()
- 
+
     if st.button("Show Invoice", type="primary", use_container_width=True):
         errors = []
         if not name.strip():
@@ -371,7 +320,7 @@ def main() -> None:
             errors.append("Please choose a day")
         if not time_choice:
             errors.append("Please choose a time")
- 
+
         if errors:
             st.session_state.pop("invoice", None)
             for error in errors:
@@ -389,7 +338,7 @@ def main() -> None:
                     service_total, day_choice, time_choice
                 ),
             }
- 
+
     invoice = st.session_state.get("invoice")
     if invoice:
         current_services = [dict(item) for item in services]
@@ -410,9 +359,7 @@ def main() -> None:
             )
         else:
             st.session_state.pop("invoice", None)
- 
- 
+
+
 if __name__ == "__main__":
     main()
- 
-Claude finished the response
